@@ -119,9 +119,10 @@ def dwn_main():
 def ppame_get_data(row):
 #	fetches api data from the member endpoint
 #	returns: dict
-#!#!#!#!#!#!#!#!#!#!#!#!#!#!#CENSOR FOR PUBLICATION#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
+	global headers
+#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
 	headers = {"X-API-Key":"----------------------------------------"}
-#!#!#!#!#!#!#!#!#!#!#!#!#!#!#CENSOR FOR PUBLICATION#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
+#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
 	print(row['sponsor_id'])
 	the_goods = (requests.get("https://api.propublica.org/congress/v1/members/{}.json".format(row['sponsor_id']), headers = headers)) \
 		.json()['results'][0]
