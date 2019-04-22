@@ -61,10 +61,10 @@ subject_data_ordered <- subject_data <- freq(subset(data, select = c(7))$primary
 subject_data_ordered$subject <- subject_data$subject <- rownames(subject_data)
 subject_data_ordered$subject <- factor(subject_data$subject, levels = subject_data[order(subject_data$n), "subject"])
 ggplot(subject_data_ordered, aes(x = subject, y = n)) +
-  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity", color = "black") +
   coord_flip() +
   labs(title = "    Frequencies of Bill Primary Subjects",
-       caption = "Categorized into 32 bins used by the Congressional Research Service,\nmore information at https://www.congress.gov/help/field-values/policy-area",
+       caption = "Categorized into 32 bins used by the Congressional Research Service,\nmore information at https://www.congress.gov/help/field-values/policy-area\n",
        y = "", x = "")
 ```
 
@@ -91,7 +91,7 @@ subset(data, select = c(13,16,10)) %>%
   gather() %>%                             # Convert to key-value pairs
   ggplot(aes(value)) +  
     facet_wrap(~ key, scales = "free") +
-    geom_bar() +
+    geom_bar(color = "black") +
     theme_bw()
 summarise(group_by(data, congress, sponsor_party), bill_count = n()) %>%
   ggplot(aes(fill = sponsor_party, x = congress, y = bill_count)) +
