@@ -222,6 +222,35 @@ plot_ly(km_1_data, type = "scatter3d", mode = "markers", x = ~bill_len, y = ~dw_
   layout(title = "Figure 8: k-Means Clustered Bills Passed in the House,\n112th - 115th Congresses")
 ```
 
+So, what happens if we drop that attribute (and `bill_num_usc_refs`, which is highly collinear with it)?
+
+```{r, message=FALSE, warning=FALSE}
+km_2_clusters <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/K-Means-Clusters2.csv")
+km_2_clusters
+```
+
+Many of the same variables are informative, though now it's a bit easier to tell. In particular, the number of cosponsors, the sponsor's ideologies, and the sponsor's seniority/leadership status are major drivers of the clustering. In the plot below, we see that number of cosponsors is a "primary" driver, distinguishing bills with many cosponsors from those without. Within bills with few cosponsors, `dw_nom_1` (sponsor's economic ideology), divides the data into two groups, but neither it nor `dw_nom_2` (sponsor's social positions) yields clear clusters.
+
+```{r, message=FALSE, warning=FALSE}
+
+km_2_data <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/K-Means-Output2.csv")
+plot_ly(km_2_data, type = "scatter3d", mode = "markers", x = ~cosponsors, y = ~dw_nom_1,
+        z = ~dw_nom_2, color = ~Cluster, hoverinfo = 'text', text = ~row.ID, colors = "Spectral") %>%
+  layout(title = "Figure 9: k-Means Clustered Bills Passed in the House,\n112th - 115th Congresses (2)")
+
+```
+
+If we limit the plot to only those three clusters (with low cosponsor numbers), we can easily see how those final clusters are being distinguished: mostly along sponsor age, seniority, and social positions. One cluster is made up of bills sponsored by "younger" members (those 55 and under); the remaining two clusters both are made up of bills sponsored by older members, and differ on member seniority
+
+```{r, message=FALSE, warning=FALSE}
+
+filter(km_2_data, Cluster %in% c("cluster_0", "cluster_3", "cluster_4")) %>%
+  plot_ly(type = "scatter3d", mode = "markers", x = ~sponsor_seniority, y = ~sponsor_age, z = ~dw_nom_2, 
+          color = ~Cluster, hoverinfo = "text", text = ~row.ID, colors = "Spectral") %>%
+  layout(title = "Figure 10: k-Means Clustered Bills Passed in the House,\n112th - 115th Congresses (3)")
+  
+```
+
 ### Random Forest DT Modeling
 
 The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayesian modelling, and logistic regression.
