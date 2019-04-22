@@ -268,12 +268,12 @@ def opp2_main():
 def main():
 	global headers
 	headers = {"X-API-Key":"##censored##"}
-#	ppabe_main()	#1: GET PROPUBLICA API BILL-ENDPOINT DATA
-#	gt_main()		#2: GET GOVTRACK DATA
-#	dwn_main()		#3: GET DW_NOMINATE DATA
-#	ppame_main()	#4: GET PROPUBLICA API MEMBER-ENDPOINT DATA
-#	opp_main()		#5: OTHER PREPROCESSING
-#	tp_main()		#6: TEXT PROCESSING
+	ppabe_main()		#1: GET PROPUBLICA API BILL-ENDPOINT DATA
+	gt_main()		#2: GET GOVTRACK DATA
+	dwn_main()		#3: GET DW_NOMINATE DATA
+	ppame_main()		#4: GET PROPUBLICA API MEMBER-ENDPOINT DATA
+	opp_main()		#5: OTHER PREPROCESSING
+	tp_main()		#6: TEXT PROCESSING
 	opp2_main()		#7: OTHER PREPROCESSING ROUND 2
 
 if __name__ == '__main__':
