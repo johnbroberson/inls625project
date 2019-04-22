@@ -321,7 +321,9 @@ logit_reg <- glm(made_through ~ cosponsors + primary_subject + sponsor_party +  
 
 ```
 
-Finally, I performed a logistic regression on the data. For this method, I had to use `made_through` as the outcome - I attempted to build a multinomial logit model so that I could regress with the `result` outcome, but encountered errors with R's `mlogit` method. In the logit model, I included all of the variables we've seen to be at all predictive or correlated, in the correlation matrix and in the other analytical methods above. I used a binomial distribution with a logit link to estimate a **logit** model. The formula I used is: `made_through ~ cosponsors + primary_subject + sponsor_party + sponsor_gender +` `congress + dw_nom_1 + dw_nom_2 + sponsor_age + bill_len + bill_num_usc_refs + sponsor_leadership`.
+Finally, I performed a logistic regression on the data. For this method, I had to use `made_through` as the outcome - I attempted to build a multinomial logit model so that I could regress with the `result` outcome, but encountered errors with R's `mlogit` method. I first attempted to do this section in KNIME like I did for the previous sections, but KNIME's logistic regression node would never converge, no matter what data I fed it or if I standardized numeric attributes. In R, I was able to get the model to converge.
+
+In the logit model, I included all of the variables we've seen to be at all predictive or correlated, in the correlation matrix and in the other analytical methods above. I used a binomial distribution with a logit link to estimate a **logit** model. The formula I used is: `made_through ~ cosponsors + primary_subject + sponsor_party + sponsor_gender +` `congress + dw_nom_1 + dw_nom_2 + sponsor_age + bill_len + bill_num_usc_refs + sponsor_leadership`.
 
 In the model that resulted, some variables were highly predictive of the outcome; the table below lists each variable in the regression whose effect was significant to at least the *p* < 0.05 level. I list the variable name and the corresponding Odds Ratio. Two notes: some variable names are poorly formatted - these are the dummy variables created by R when a categorical (factor) variable, such as `primary_subject`, is used in regression. Second, an Odds Ratio is somewhat complicated to interpret (though less complicated than a logit coefficient) - essentially, an Odds Ratio greater than 1 means the predictor is directly correlated with the outcome, and an Odds Ratio less than 1 means the predictor is inversely correlated with the outcome.
 
@@ -347,7 +349,7 @@ As we can see from the table above, a bill being in a number of subject areas gr
 
 The remaining significant predictors in this regression are `congress`, `sponsor_age`, and `sponsor_partyR`. Although `sponsor_age` is highly significant with a p-value of 1.95e-13 (!!) its effect is, practically, fairly small. A sponsor being one year older only increases by 2.8 percentage points the odds that a bill makes it through Congress. In contrast, a bill having been sponsored by a Republican halved the odds of it making its way through Congress, compared to bills sponsored by Democrats (Democrats being the reference category in `sponsor_party`. Finally, bills became less likely to make it all the way through Congress as time passed from the 112th to the 115th Congresses. These effects, for both `congress` and `sponsor_party`, may be influenced by the simple differences in sample sizes between values; there were more and more bills each succesive Congress, yet there may be some limit on the number of bills that can make it all the way through; therefore, the "likelihood" that a bill gets all the way through decreases simply because there are more bills present. The same may be true for Republican-sponsored bills; as seen in Figure 4 above, there are over 3 times as many Republican-sponsored bills as Democratically-sponsored bills, which may lead to a similar pheonomenon as with Congresses.
 
-One additional way to depict this model's results is through the fitted values; I have coded a new `prediction` variable
+One additional way to depict this model's results is through the fitted values; the plot below compares the proportion of bills that made it through congress (i.e. outcome in the logit regression == 1) from reality versus from the regression's predictions. As the figure shows, the model's prediction follows a similar *pattern* as reality, though it predicts that more bills get passed across the board. 
 
 ```{r, message=FALSE, warning=FALSE}
 
@@ -355,21 +357,42 @@ data['logit_fit_val'] <- fitted(logit_reg)
 data['logit_pred'] <- (data$logit_fit_val < 0.5)
 
 data$congress <- as.factor(data$congress)
-ggplot(data, aes(x = sponsor_age, y = bill_len, shape = congress, color = logit_pred)) +
-  geom_point() +
-  facet_wrap(~ sponsor_party)
 
+require(reshape2)
+summarise(group_by(data, congress), mean_real = mean(made_through), mean_pred = (1-mean(logit_pred))) %>%
+  melt(id.vars = c("congress")) %>%
+    ggplot(aes(x = congress, y = value, fill = variable)) +
+      geom_bar(position = "dodge", stat = "identity") +
+      scale_fill_manual(name = "mean(made_through)",
+                        labels = c("True","Predicted"),
+                        values = c("#3487BD","#D63E50")) +
+      labs(title = "Figure 11: Real vs. Fitted Means of Target Variable\nby Congress, Logit Regression",
+           x = "Congress", y = "")
 
-summarise(group_by(data, sponsor_age), pred = mean(logit_pred)) %>%
-  ggplot(aes(x = sponsor_age, y = pred)) +
-    geom_point()
+```
 
+Similarly, the logit model correctly predicts that a smaller proportion* of Republican bills made it through Congress than Democratic bills, though (in contrast to the previous figure) it underestimated the means across the board.
+
+\* Important to note that these are *proportions*, because in raw numbers, definitely more Republican bills made it through than Democratic ones. But the underlying reason for that phenomenon - it being a Republican-controlled Congress - also underlies this phenomenon, because Republicans simply proposed so many bills that they couldn't keep up with all of them and get all of them through.
+
+```{r, message=FALSE, warning=FALSE}
+filter(data, sponsor_party != "I") %>%
+  group_by(sponsor_party) %>%
+    summarise(mean_real = mean(made_through), mean_pred = (1-mean(logit_pred))) %>%
+      melt(id.vars = c("sponsor_party")) %>%
+        ggplot(aes(x = sponsor_party, y = value, fill = variable)) +
+          geom_bar(position = "dodge", stat = "identity") +
+          scale_fill_manual(name = "mean(made_through)",
+                            labels = c("True","Predicted"),
+                            values = c("#3487BD","#D63E50")) +
+          labs(title = "Figure 12:  Real vs. Fitted Means of Target Variable\nby Sponsor Party, Logit Regression",
+               x = "Sponsor Party", y = "")
 
 ```
 
 # Conclusions
 
-Best model: 
+Best model: RandomForest or Logit Regression
 
 Limitations: so much about politics can't be captured (see the intercept from the logit regression)
 
@@ -377,22 +400,5 @@ Going forward:
 
 * get 116th bills, use this best model to predict what'll happen. Trouble though: house majority switched
 * expand to all bills *introduced* into the House, might be more variation in which get through, and definitely would be a much larger sample size
-
-
-
-```{r, message=FALSE, warning=FALSE}
-
-#require(mlogit)
-
-#mlogit_data <- data[complete.cases(data),] %>%
-#  subset(select = c(5,7,10,13:16,22,26,30:31,34))
-
-#mlogit_reg <- mlogit(result ~ 1 | sponsor_gender, data = mlogit_data)
-  
-#mlogit_reg <- mlogit(result ~ cosponsors + primary_subject + sponsor_party +  sponsor_gender + congress + dw_nom_1 + dw_nom_2 + sponsor_age + bill_len + bill_num_usc_refs + sponsor_leadership, data = data)
-
-
-```
-
 
 ...
