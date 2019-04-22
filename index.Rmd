@@ -1,7 +1,6 @@
 ---
-title: "INLS 625 Term Project"
+title: "Predicting the Fates of Congressional Bills"
 author: "John Roberson"
-date: "April 22, 2019"
 output: 
   html_document:
     df_print: paged
@@ -10,11 +9,13 @@ output:
     code_folding: hide
 ---
 
-As a reminder, I'm investigating Congressional bills from the 112th to 115th Congresses; within that group, I'm looking specifically at bills that *passed* the House in each of those Congresses. The data were sourced from three places: [ProPublica's Congress API](https://projects.propublica.org/api-docs/congress-api/), [govtrack.us](https://www.govtrack.us), and [voteview.com](https://voteview.com/data) (for DW_NOMINATE score). With the data collected and (for the most part) pre-processed in Python (see the script [here](https://github.com/johnbroberson/inls625project/blob/gh-pages/congspons.py) if you haven't already), I next turned to R to understand and analyze the data. 
+Term Project, INLS 625 Spring 2019
+
+For this project, I'm investigating Congressional bills from the 112th to 115th Congresses; within that group, I'm looking specifically at bills that *passed* the House in each of those Congresses. The data were sourced from three places: [ProPublica's Congress API](https://projects.propublica.org/api-docs/congress-api/), [govtrack.us](https://www.govtrack.us), and [voteview.com](https://voteview.com/data) (for DW_NOMINATE score). With the data collected and (for the most part) pre-processed in Python (see the script [here](https://github.com/johnbroberson/inls625project/blob/gh-pages/congspons.py) if you haven't already), I next turned to R to understand and analyze the data. 
 
 # Descriptives
 
-To begin, I've included the pre-processed data in tabular form below. Recoding in R included making dates be recognized as dates, converting between nominal and numeric attributes, and fixing some string cases. 
+To begin, I've included the pre-processed data in tabular form below. Although I did most recoding in Python before importing the data to R, I did do some additional preprocessing once the data were loaded here, including making dates be recognized as dates, converting between nominal and numeric attributes, and fixing some string cases. 
 
 ```{r Data Overview, message=FALSE, warning=FALSE}
 require(tidyverse)
@@ -372,7 +373,10 @@ Best model:
 
 Limitations: so much about politics can't be captured (see the intercept from the logit regression)
 
-Going forward: get 116th bills, use this best model to predict what'll happen. Trouble though: house majority switched
+Going forward: 
+
+* get 116th bills, use this best model to predict what'll happen. Trouble though: house majority switched
+* expand to all bills *introduced* into the House, might be more variation in which get through, and definitely would be a much larger sample size
 
 
 
