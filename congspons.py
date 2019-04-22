@@ -267,9 +267,7 @@ def opp2_main():
 
 def main():
 	global headers
-#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
-	headers = {"X-API-Key":"----------------------------------------"}
-#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
+	headers = {"X-API-Key":"##censored##"}
 #	ppabe_main()	#1: GET PROPUBLICA API BILL-ENDPOINT DATA
 #	gt_main()		#2: GET GOVTRACK DATA
 #	dwn_main()		#3: GET DW_NOMINATE DATA
