@@ -251,9 +251,28 @@ filter(km_2_data, Cluster %in% c("cluster_0", "cluster_3", "cluster_4")) %>%
   
 ```
 
+This is all very interesting, but what we're really trying to do here is predict what'll happen to a bill in the long run; do these six clusters have anything to do with our target variable?
+
+```{r, message=FALSE, warning=FALSE}
+
+km_2_data %>%
+  group_by(result, Cluster) %>%
+    summarise(count_em = n()) %>%
+      ggplot(aes(fill = result, x = Cluster, y = count_em)) +
+        geom_bar(stat = "identity", position = "fill") +
+        scale_fill_brewer(palette = "Spectral") +
+        labs(x = "",
+             y = "Proportion of Bills within Cluster\n",
+             title = "Figure 11: Bill Fates by k-Means Cluster")
+
+
+```
+
+Nope. Sad!
+
 ### Random Forest DT Modeling
 
-The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayesian modelling, and logistic regression.
+The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayesian modelling, and logistic regression. Hopefully, these will be better at my end-goal.
 
 I again built most of these models in KNIME. In contrast to the additional data processing that was necessary before the cluster analysis above, no changes were made to the data between export from R, import into KNIME, and running of the models. For this model set, I asked KNIME to predict the six-level `result` column - the more detailed fates of bills in the data set.
 
@@ -290,7 +309,7 @@ summarise(group_by(rf_1_data, result, match), bill_count = n()) %>%
                       labels = c("Incorrect","Correct"),
                       values = c("#D63E50","#3487BD")) +
     labs(y = "Proportion of Bills within Result Category",
-         title = "Figure 9: RandomForest Performance By Bill Fate,\nBills that Passed the House in the 112th - 115th Congresses",
+         title = "Figure 12: RandomForest Performance By Bill Fate,\nBills that Passed the House in the 112th - 115th Congresses",
          x = "") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
@@ -314,7 +333,7 @@ summarise(group_by(rf_1_data, primary_subject, match), bill_count = n()) %>%
                       labels = c("Incorrect","Correct"),
                       values = c("#D63E50","#3487BD")) +
     labs(y = "Proportion of Bills within Subject Area",
-         title = "Figure 10: RandomForest Performance By Subject Area,\nBills that Passed the House in the 112th - 115th Congresses",
+         title = "Figure 13: RandomForest Performance By Subject Area,\nBills that Passed the House in the 112th - 115th Congresses",
          x = "") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
@@ -395,7 +414,7 @@ summarise(group_by(data, congress), mean_real = mean(made_through), mean_pred = 
       scale_fill_manual(name = "mean(made_through)",
                         labels = c("True","Predicted"),
                         values = c("#3487BD","#D63E50")) +
-      labs(title = "Figure 11: Real vs. Fitted Means of Target Variable\nby Congress, Logit Regression",
+      labs(title = "Figure 14: Real vs. Fitted Means of Target Variable\nby Congress, Logit Regression",
            x = "Congress", y = "")
 
 ```
@@ -415,7 +434,7 @@ filter(data, sponsor_party != "I") %>%
           scale_fill_manual(name = "mean(made_through)",
                             labels = c("True","Predicted"),
                             values = c("#3487BD","#D63E50")) +
-          labs(title = "Figure 12:  Real vs. Fitted Means of Target Variable\nby Sponsor Party, Logit Regression",
+          labs(title = "Figure 15:  Real vs. Fitted Means of Target Variable\nby Sponsor Party, Logit Regression",
                x = "Sponsor Party", y = "")
 
 ```
