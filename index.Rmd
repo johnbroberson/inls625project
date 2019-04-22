@@ -10,7 +10,7 @@ output:
     code_folding: hide
 ---
 
-As a reminder, I'm investigating Congressional bills from the 112th to 115th Congresses; within that group, I'm looking specifically at bills that *passed* the House in each of those Congresses. The data were sourced from three places: [ProPublica's Congress API](https://projects.propublica.org/api-docs/congress-api/), [govtrack.us](https://www.govtrack.us), and [voteview.com](https://voteview.com/data) (for DW_NOMINATE score). With the data collected and (for the most part) pre-processed in Python (see the script [here](https://github.com/johnbroberson/inls625/blob/master/congspons.py) if you haven't already), I next turned to R to understand and analyze the data. 
+As a reminder, I'm investigating Congressional bills from the 112th to 115th Congresses; within that group, I'm looking specifically at bills that *passed* the House in each of those Congresses. The data were sourced from three places: [ProPublica's Congress API](https://projects.propublica.org/api-docs/congress-api/), [govtrack.us](https://www.govtrack.us), and [voteview.com](https://voteview.com/data) (for DW_NOMINATE score). With the data collected and (for the most part) pre-processed in Python (see the script [here](https://github.com/johnbroberson/inls625project/blob/gh-pages/congspons.py) if you haven't already), I next turned to R to understand and analyze the data. 
 
 # Descriptives
 
