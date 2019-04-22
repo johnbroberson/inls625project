@@ -61,9 +61,9 @@ subject_data_ordered <- subject_data <- freq(subset(data, select = c(7))$primary
 subject_data_ordered$subject <- subject_data$subject <- rownames(subject_data)
 subject_data_ordered$subject <- factor(subject_data$subject, levels = subject_data[order(subject_data$n), "subject"])
 ggplot(subject_data_ordered, aes(x = subject, y = n)) +
-  geom_bar(stat = "identity", color = "black") +
+  geom_bar(stat = "identity", fill = "black") +
   coord_flip() +
-  labs(title = "    Frequencies of Bill Primary Subjects",
+  labs(title = "    Figure 1: Frequencies of Bill Primary Subjects",
        caption = "Categorized into 32 bins used by the Congressional Research Service,\nmore information at https://www.congress.gov/help/field-values/policy-area\n",
        y = "", x = "")
 ```
@@ -79,7 +79,7 @@ subset(data, select = c(14,15,19,22)) %>%
     facet_wrap(~ key, scales = "free") +   
     geom_density() +
     theme_bw() +
-    labs(title = "Densities of Selected Characteristics: Bill Sponsors, Continuous Attributes")
+    labs(title = "Figure 2: Densities of Selected Continuous Attributes")
 ```
 
 Next, I plotted a few discrete characteristics of the data; as the figure below shows, the number of bills that passed the House steadily increased from the 112th through the 115th Congress. These bills were overwhelmingly sponsored by men, and overwhelmingly sponsored by Republicans. The gender disparity is to be expected due to the overall gender disparity in the House, though it might be enhanced in this case by the party disparity, as the Republican House caucus is more overwhelmingly-male than its Democratic counterpart. 
@@ -91,14 +91,15 @@ subset(data, select = c(13,16,10)) %>%
   gather() %>%                             # Convert to key-value pairs
   ggplot(aes(value)) +  
     facet_wrap(~ key, scales = "free") +
-    geom_bar(color = "black") +
-    theme_bw()
+    geom_bar(fill = "black") +
+    theme_bw() +
+    labs(title = "Figure 3: Distributions of Selected Categorical Attributes")
 summarise(group_by(data, congress, sponsor_party), bill_count = n()) %>%
   ggplot(aes(fill = sponsor_party, x = congress, y = bill_count)) +
     geom_bar(stat = "identity", position = "fill") +
     scale_fill_manual(name = "Sponsor Party",
                       values = c("#3487BD","black","#D63E50")) +
-    labs(title = "Bills Sponsored by Congress and Sponsor Party",
+    labs(title = "Figure 4: Bills Sponsored by Congress and Sponsor Party",
          y = "Proportion of Bills Sponsored\n",
          x = "Congress") 
 ```
@@ -121,7 +122,7 @@ subset(data, select = c(26:30)) %>%
     geom_density()  +                      # as density
     scale_x_log10() +
     theme_bw() +
-    labs(title = "Densities of Selected Characteristics: Bill Text")
+    labs(title = "Figure 5: Densities of Selected Characteristics: Bill Text")
 ```
 
 ### Correlations
@@ -143,7 +144,7 @@ Several top-line conclusions can be drawn from this figure:
 cor.mat <- cor(subset(data, select = c(5,13:15,19,26:30,32:33)))
 cor.mat.rounded <- round(cor.mat, 2)
 require(corrplot)
-corrplot(cor.mat.rounded, type = "lower", number.cex = .7, order = "AOE", tl.cex = 0.8, tl.srt = .01, tl.col = "black", col = colorRampPalette(c("#3487BD","white","#D63E50"))(200))
+corrplot(cor.mat.rounded, type = "lower", number.cex = .7, order = "AOE", tl.cex = 0.8, tl.srt = .01, tl.col = "black", title = "Figure 6: Matrix of Correlations Between Numeric Attributes", col = colorRampPalette(c("#3487BD","white","#D63E50"))(200))
 ```
 
 ### Target: Bill Fates
@@ -174,7 +175,7 @@ summarise(group_by(data, result, primary_subject), bill_count = n())  %>%
     coord_flip() +
     scale_fill_brewer(palette = "Spectral", guide = guide_legend(reverse = TRUE), name = "Result") +
     labs(y = "Percent of Bills within Subject Area",
-         title = "Fates of Bills that Passed the House in the 112th - 115th Congresses",
+         title = "Figure 7: Fates of Bills that Passed the House\nin the 112th - 115th Congresses",
          x = "") +
     theme(plot.title = element_text(hjust = 0.5))
     
@@ -228,16 +229,39 @@ require(plotly)
 km_1_data <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/K-Means-Output1.csv")
 plot_ly(km_1_data, type = "scatter3d", mode = "markers", x = ~bill_len, y = ~dw_nom_2,
         z = ~sponsor_seniority, color = ~Cluster, hoverinfo = 'text', text = ~row.ID, colors = "Spectral") %>%
-  layout(title = "k-Means Clustered Bills Passed in the House, 112th - 115th Congresses")
+  layout(title = "Figure 8: k-Means Clustered Bills Passed in the House,\n112th - 115th Congresses")
 ```
 
 ### Random Forest DT Modeling
 
-accuracy by fate
+The next models I developed for this data were supervised; specifically, random forest decision trees, X, and X.
+
+I again built these models in KNIME. In contrast to the additional data processing that was necessary before the cluster analysis above, no changes were made to the data between export from R, import into KNIME, and running of the models. For this model set, I asked KNIME to predict the six-level `result` column - the more detailed fates of bills in the data set.
+
+I built two RandomForest node chains in KNIME; one primary based on a simple 85/15 partition and one secondary with an X-Partitioner/X-Aggregator loop for 10-fold CV. The model I discuss below is that developed by the simple 85/15 partition, as that chain produced more detailed output, with not only the consensus prediction, but the number of models which agreed on that prediction and the proportion of models that predicted each possible outcome for each instance (think probabilistic modeling). I'm including that data with those columns below. I've also coded a `match` column, simplifying the six-level prediction column into a two-level boolean column.
+
 
 ```{r, message=FALSE, warning=FALSE}
 rf_1_data <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/RF_Data1.csv")
 rf_1_data['match'] <- (as.character(rf_1_data$result) == as.character(rf_1_data$result..Out.of.bag.))
+
+rf_1_data
+
+```
+
+Overall, the models developed by the partitioned-RF model set had an accuracy of 76.8%. That performance differed by result category; the model was better at predicting the **Passed, but not law** and **Went to Senate** and not as good at predicting the **Became law** and **Didn't leave Congress** results. I base that conclusion off of the F-scores for each result category as reported by KNIME and included below. Stats for the **Vetoed** and **Other** categories were not reported. 
+
+```{r, message=FALSE, warning=FALSE}
+
+rf_1_acc_stats <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/RF_AccStats1.csv")
+rf_1_acc_stats
+
+```
+
+The RandomForest model's performance can also be visualized graphically, in addition to through tables. Below, I've graphed a simpler version of the stats from the table above; for each category, I calculated the percent of bills in which the RF model's predicted category (the most common prediction from the 100 individual models) matched the true value. This shows the same conclusions drawn above; **Went to Senate** and **Didn't leave Congress** had the greatest within-group accuracy, **Other** and **Became law** were predicted correctly less often - though still over 50% of the time - and the remaining two categories were predicted incorrectly 100% of the time, almost certainly due to their relatively miniscule sample size.
+
+```{r, message=FALSE, warning=FALSE}
+
 summarise(group_by(rf_1_data, result, match), bill_count = n()) %>%
   ggplot(aes(fill = match, x = result, y = bill_count)) +
     geom_bar(stat = "identity", position = "fill") +
@@ -246,13 +270,20 @@ summarise(group_by(rf_1_data, result, match), bill_count = n()) %>%
                       name = "Prediction",
                       labels = c("Incorrect","Correct"),
                       values = c("#D63E50","#3487BD")) +
-    labs(y = "Proportion of Bills within Subject Area",
-         title = "Random Forest Performance By Bill Fate,\nBills that Passed the House in the 112th - 115th Congresses",
+    labs(y = "Proportion of Bills within Result Category",
+         title = "Figure 9: RandomForest Performance By Bill Fate,\nBills that Passed the House in the 112th - 115th Congresses",
          x = "") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
 
-accuracy by subject
+Another way to visualize the model's performance is to examine its accuracy by primary subject area; was the model particularly better or worse at predicting the result of any bills in any certain subjects? The answer to that question is plotted below. Overall, the model performed realtively-similarly across almost all subject areas. There are three outlier categories in which the model was either 100% correct or 100% incorrect in its predictions:
+
+* 100% Correct: **Private Legislation** and **Civil Rights and Liberties, Minority Issues**
+* 100% Incorrect: **Social Sciences and History**
+
+An additional outlier, **Arts, Culture, and Religion**, was not 100% one way or the other, but it had markedly lower accuracy than the remaining subject areas. 
+
+As we saw in Figure 1, each of these four bills is among the least-frequent (together, they make up 4 of the bottom 6 categories by frequency). As such, it again follows that the model would perform worse in these categories, simply due to the small sample size to work with.
 
 ```{r, message=FALSE, warning=FALSE}
 summarise(group_by(rf_1_data, primary_subject, match), bill_count = n()) %>%
@@ -264,7 +295,7 @@ summarise(group_by(rf_1_data, primary_subject, match), bill_count = n()) %>%
                       labels = c("Incorrect","Correct"),
                       values = c("#D63E50","#3487BD")) +
     labs(y = "Proportion of Bills within Subject Area",
-         title = "Random Forest Performance By Subject Area,\nBills that Passed the House in the 112th - 115th Congresses",
+         title = "Figure 10: RandomForest Performance By Subject Area,\nBills that Passed the House in the 112th - 115th Congresses",
          x = "") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
