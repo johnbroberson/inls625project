@@ -240,7 +240,7 @@ plot_ly(km_2_data, type = "scatter3d", mode = "markers", x = ~cosponsors, y = ~d
 
 ```
 
-If we limit the plot to only those three clusters (with low cosponsor numbers), we can easily see how those final clusters are being distinguished: mostly along sponsor age, seniority, and social positions. One cluster is made up of bills sponsored by "younger" members (those 55 and under); the remaining two clusters both are made up of bills sponsored by older members, and differ on member seniority
+If we limit the plot to only those three clusters (with low cosponsor numbers), we can easily see how those final clusters are being distinguished: mostly along sponsor age, seniority, and social positions. One cluster is made up of bills sponsored by "younger" members (those 55 and under); the remaining two clusters both are made up of bills sponsored by older members, and differ on member seniority.
 
 ```{r, message=FALSE, warning=FALSE}
 
