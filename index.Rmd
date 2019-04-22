@@ -376,6 +376,7 @@ Similarly, the logit model correctly predicts that a smaller proportion* of Repu
 \* Important to note that these are *proportions*, because in raw numbers, definitely more Republican bills made it through than Democratic ones. But the underlying reason for that phenomenon - it being a Republican-controlled Congress - also underlies this phenomenon, because Republicans simply proposed so many bills that they couldn't keep up with all of them and get all of them through.
 
 ```{r, message=FALSE, warning=FALSE}
+
 filter(data, sponsor_party != "I") %>%
   group_by(sponsor_party) %>%
     summarise(mean_real = mean(made_through), mean_pred = (1-mean(logit_pred))) %>%
@@ -394,11 +395,18 @@ filter(data, sponsor_party != "I") %>%
 
 Best model: RandomForest or Logit Regression
 
-Limitations: so much about politics can't be captured (see the intercept from the logit regression)
+* Clustering was interesting, but supervised learning definitely the *more* appropriate tool here
+* Na&iuml;ve Bayes was just terrible here
+* Logit regression allows for a lot of tinkering, e.g. might want to consider adding regional fixed effects
+
+Main limitation: so much about politics can't be captured (see the intercept from the logit regression)
 
 Going forward: 
 
-* get 116th bills, use this best model to predict what'll happen. Trouble though: house majority switched
-* expand to all bills *introduced* into the House, might be more variation in which get through, and definitely would be a much larger sample size
+* Use bills from the 116th Congress as a validation set
+    - Trouble though: House majority switched
+* Expand to all bills *introduced* into the House 
+    - Might be more variation in which get through
+    - Definitely would be a much larger sample size
 
 ...
