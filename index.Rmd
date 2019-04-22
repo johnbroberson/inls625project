@@ -161,8 +161,8 @@ The final attribute in the data that will prove crucial in later analysis is the
 
 In addition to this six-level categorical variable, I coded a dichotmous version `result_simplified`, which combined the six categories listed above into the following two:
 
-* **Made it through**: composed of **Became law**, **Passed, but are not law**, and **Vetoed**
-* **Languished in Congress**: composed of **Went to Senate**, **Didn't leave Congress**, and **Other**
+* **Made it through** (*n* = `r freq(data$result_simplified)["Made it through","n"]`): composed of **Became law**, **Passed, but are not law**, and **Vetoed**
+* **Languished in Congress** (*n* = `r freq(data$result_simplified)["Languished in Congress","n"]`): composed of **Went to Senate**, **Didn't leave Congress**, and **Other**
 
 Clearly, there are distinct differences between bills that became law and those that were vetoed, but in this simple dichotmous split, the four bills that were vetoed are *more* like the other bills that *also* made it all the way through Congress than those that didn't make it out at all.
 
