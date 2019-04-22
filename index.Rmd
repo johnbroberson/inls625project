@@ -234,9 +234,9 @@ plot_ly(km_1_data, type = "scatter3d", mode = "markers", x = ~bill_len, y = ~dw_
 
 ### Random Forest DT Modeling
 
-The next models I developed for this data were supervised; specifically, random forest decision trees, X, and X.
+The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayes modelling, and logistic regression.
 
-I again built these models in KNIME. In contrast to the additional data processing that was necessary before the cluster analysis above, no changes were made to the data between export from R, import into KNIME, and running of the models. For this model set, I asked KNIME to predict the six-level `result` column - the more detailed fates of bills in the data set.
+I again built most of these models in KNIME. In contrast to the additional data processing that was necessary before the cluster analysis above, no changes were made to the data between export from R, import into KNIME, and running of the models. For this model set, I asked KNIME to predict the six-level `result` column - the more detailed fates of bills in the data set.
 
 I built two RandomForest node chains in KNIME; one primary based on a simple 85/15 partition and one secondary with an X-Partitioner/X-Aggregator loop for 10-fold CV. The model I discuss below is that developed by the simple 85/15 partition, as that chain produced more detailed output, with not only the consensus prediction, but the number of models which agreed on that prediction and the proportion of models that predicted each possible outcome for each instance (think probabilistic modeling). I'm including that data with those columns below. I've also coded a `match` column, simplifying the six-level prediction column into a two-level boolean column.
 
@@ -299,5 +299,16 @@ summarise(group_by(rf_1_data, primary_subject, match), bill_count = n()) %>%
          x = "") +
     theme(plot.title = element_text(hjust = 0.5))
 ```
+
+### Na&iuml;ve Bayesian Modelling
+
+sdkghalsgh
+
+### Logistic Regression
+
+lkjasfglkjh
+
+
+
 
 ...
