@@ -183,19 +183,7 @@ summarise(group_by(data, result, primary_subject), bill_count = n())  %>%
 
 
 ```{r, message=FALSE, warning=FALSE}
-#https://machinelearningmastery.com/machine-learning-in-r-step-by-step/
 write.csv(data, "C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/R_Processed_Data.csv")
-#require(caret)
-#complete_data <- data[complete.cases(data),]
-#validation_index <- createDataPartition(complete_data$bill_id, p = 0.85, list = F)
-#validation_data <- complete_data[-validation_index,]
-#training_data <- complete_data[validation_index,]
-#control <- trainControl(method = "cv", number = 10)
-#metric <- "Accuracy"
-#set.seed(7)
-#model_lda <- train(result_simplified~., data = training_data, method = "lda", metric = metric, trControl = control)
-#model_knn <- train(result_simplified~., data = training_data, method = "knn", metric = metric, trControl = control)
-#model_rf <- train(result_simplified~., data = training_data, method = "rf", metric = metric, trControl = control)
 ```
 
 # Analytics
@@ -217,6 +205,7 @@ With the data I have, both supervised and unsupervised learning methods can yiel
 * Rows with missing values were dropped.
 In KNIME, I specified that I wanted 6 clusters to be identified; I chose this number as it's the number of unique values in my `result` variable, and I thought it might be interesting to see if clusters appear which are similar to/predict the ultimate fate of the bills (I undertake that task more directly with the supervised learning models below.)
 After performing the cluster analysis in KNIME, I ported the data back over to R to make tables and plots. The following table contains the mean value of each cluster on each of the attributes used in the analysis; put together, the table represents the seven centroids of the clusters, in 12-dimensional space. From this table, we can see that there is more difference between the clusters on some attributes than other others. For example, there is a lot of variation between the clusters on `bill_len`, but not much variation between clusters on `congress`.
+
 ```{r, message=FALSE, warning=FALSE}
 km_1_clusters <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/K-Means-Clusters1.csv")
 km_1_clusters
@@ -234,7 +223,7 @@ plot_ly(km_1_data, type = "scatter3d", mode = "markers", x = ~bill_len, y = ~dw_
 
 ### Random Forest DT Modeling
 
-The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayes modelling, and logistic regression.
+The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayesian modelling, and logistic regression.
 
 I again built most of these models in KNIME. In contrast to the additional data processing that was necessary before the cluster analysis above, no changes were made to the data between export from R, import into KNIME, and running of the models. For this model set, I asked KNIME to predict the six-level `result` column - the more detailed fates of bills in the data set.
 
@@ -249,7 +238,7 @@ rf_1_data
 
 ```
 
-Overall, the models developed by the partitioned-RF model set had an accuracy of 76.8%. That performance differed by result category; the model was better at predicting the **Passed, but not law** and **Went to Senate** and not as good at predicting the **Became law** and **Didn't leave Congress** results. I base that conclusion off of the F-scores for each result category as reported by KNIME and included below. Stats for the **Vetoed** and **Other** categories were not reported. 
+Overall, the models developed by the partitioned-RF model set had an accuracy of 76.8%, i.e. an error rate of 23.2%. Running the 10-fold CV yielded an average error rate of 23.351%, confirming the stability of the RF models. Those models' performance differed by result category; RandomForest was generally better at predicting the **Passed, but not law** and **Went to Senate** and not as good at predicting the **Became law** and **Didn't leave Congress** results. I base that conclusion off of the F-scores for each result category as reported by KNIME and included below. Stats for the **Vetoed** and **Other** categories were not reported. 
 
 ```{r, message=FALSE, warning=FALSE}
 
@@ -300,15 +289,69 @@ summarise(group_by(rf_1_data, primary_subject, match), bill_count = n()) %>%
     theme(plot.title = element_text(hjust = 0.5))
 ```
 
-### Na&iuml;ve Bayesian Modelling
+### Na&iuml;ve Bayesian Modelling (NB)
 
-sdkghalsgh
+For this next model type, I again turned to KNIME. Again building the model using an 85/15 random split for training and test data, I applied a Na&iuml;ve Bayes learner with `result` as the target column. This model is remarkably less accurate than the RandomForest model, with just barely over 50% test accuracy (50.8%). Similarly to the RandomForest model set, the NB model performed differently by result value; it was best at predicting the **Went to Senate** result, and markedly worse at predicting all other categories; more detailed accuracy statistics are below. Because of this pretty horrible performance, I won't go any further into the NB model here.
+
+```{r, message=FALSE, warning=FALSE}
+
+nb_acc_stats_1 <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/NB_AccStats1.csv")
+nb_acc_stats_1
+
+```
 
 ### Logistic Regression
 
-lkjasfglkjh
+```{r, message=FALSE, warning=FALSE}
+
+data$result_simplified <- as.factor(data$result_simplified)
+logit_reg <- glm(result_simplified ~ cosponsors + primary_subject + sponsor_party +  sponsor_gender + congress + dw_nom_1 + dw_nom_2 + sponsor_age + bill_len + bill_num_usc_refs + sponsor_leadership, data = data, family = "binomial")
 
 
+```
+
+Finally, I performed a logistic regression on the data. For this method, I had to use `result_simplified` as the outcome - I attempted to build a multinomial logit model so that I could regress with the `result` outcome, but encountered errors with R's `mlogit` method. In the logit model, I included all of the variables we've seen to be at all predictive or correlated, in the correlation matrix and in the other analytical methods above. I used a binomial family with a logit link to estimate a **logit** model. The formula I used is: `result_simplified ~ cosponsors + primary_subject + sponsor_party + sponsor_gender + congress + dw_nom_1 + dw_nom_2 + sponsor_age + bill_len + bill_num_usc_refs + sponsor_leadership`.
+
+In the model that resulted, some variables were highly predictive of the outcome; the table below lists each variable in the regression whose effect was significant to at least the *p* < 0.05 level. I list the variable name and the corresponding Odds Ratio. Two notes: some variable names are poorly formatted - these are the dummy variables created by R when a categorical (factor) variable, such as `primary_subject`, is used in regression. Second, an Odds Ratio is somewhat complicated to interpret (though less complicated than a logit coefficient) - essentially, an Odds Ratio greater than 1 means the predictor is directly correlated with the outcome, and an Odds Ratio less than 1 means the predictor is inversely correlated with the outcome.
+
+Lastly, it's important for interpretation to understand how the outcome is coded; in this case, `result_simplified` is a factor variable, with 1 = "Made it through" and 2 = "Languished in Congress". Therefore, when Odds Ratios are being interpreted, an increase in the outcome means a decrease in likelihood of getting through Congress. A bit backwards, but not impossible to wrap your head around.
+
+```{r, message=FALSE, warning=FALSE}
+
+logit_reg_coef_info <- as.data.frame(summary(logit_reg)$coefficients)
+logit_reg_coef_info['Var'] <- rownames(logit_reg_coef_info)
+
+ors <- as.data.frame(exp(coef(logit_reg)))
+ors['Var'] <- rownames(ors)
+signif_preds_0.05 <- logit_reg_coef_info[logit_reg_coef_info$`Pr(>|z|)` < 0.05,c(1,5)]
+signif_preds_0.05_with_ors <- merge(signif_preds_0.05, ors, by = "Var")
+names(signif_preds_0.05_with_ors) <- c("Predictor","Estimate","Odds Ratio")
+signif_preds_0.05_with_ors$`Odds Ratio` <- as.character(signif_preds_0.05_with_ors$`Odds Ratio`)
+
+subset(signif_preds_0.05_with_ors, select = c(1,3))
+
+```
+
+As we can see from the table above, a bill being in a number of subject areas greatly decreases the likelihood that a bill will make it all the way through Congress. The Odds Ratios ranging from just below 6 to over 16 on the various subject dummy variables suggest that bills in those subject areas have a lower likelihood of making it all the way through Congress. This, in a similar pattern to the very *infrequent* variables in previous models, may be due to the fact that these subject areas are actually *very* frequent; with more bills in the area, there may simply be more bills "cluttering" the category that don't and were never going to make it through. 
+
+The remaining significant predictors in this regression are `congress`, `sponsor_age`, and `sponsor_partyR`. Although `sponsor_age` is highly significant with a p-value of 1.95e-13 (!!) its effect is, practically, fairly small. A sponsor being one year older only increases by 2.8 percentage points the odds that a bill makes it through Congress. In contrast, a bill having been sponsored by a Republican doubled the odds of it making its way through Congress, compared to bills sponsored by Democrats and Independents. Finally, bills became more likely to make it all the way through Congress as time passed from the 112th to the 115th Congresses. 
+
+
+
+
+```{r, message=FALSE, warning=FALSE}
+
+#require(mlogit)
+
+#mlogit_data <- data[complete.cases(data),] %>%
+#  subset(select = c(5,7,10,13:16,22,26,30:31,34))
+
+#mlogit_reg <- mlogit(result ~ 1 | sponsor_gender, data = mlogit_data)
+  
+#mlogit_reg <- mlogit(result ~ cosponsors + primary_subject + sponsor_party +  sponsor_gender + congress + dw_nom_1 + dw_nom_2 + sponsor_age + bill_len + bill_num_usc_refs + sponsor_leadership, data = data)
+
+
+```
 
 
 ...
