@@ -120,9 +120,6 @@ def ppame_get_data(row):
 #	fetches api data from the member endpoint
 #	returns: dict
 	global headers
-#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
-	headers = {"X-API-Key":"----------------------------------------"}
-#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
 	print(row['sponsor_id'])
 	the_goods = (requests.get("https://api.propublica.org/congress/v1/members/{}.json".format(row['sponsor_id']), headers = headers)) \
 		.json()['results'][0]
@@ -269,6 +266,10 @@ def opp2_main():
 		.to_csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/Processed with No Text.csv")
 
 def main():
+	global headers
+#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
+	headers = {"X-API-Key":"----------------------------------------"}
+#!#!#!#!#!#!#!#!#!#!#!#!#!#!#censored#!#!#!#!#!#!#!#!#!#!#!#!#!#!#
 #	ppabe_main()	#1: GET PROPUBLICA API BILL-ENDPOINT DATA
 #	gt_main()		#2: GET GOVTRACK DATA
 #	dwn_main()		#3: GET DW_NOMINATE DATA
