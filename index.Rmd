@@ -456,5 +456,6 @@ Going forward:
 * Expand to all bills *introduced* into the House 
     - Might be more variation in which get through
     - Definitely would be a much larger sample size
+* Join opinion polling data for relevant issues at relevant times to gauge public support
 
 ...
