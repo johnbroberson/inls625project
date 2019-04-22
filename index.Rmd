@@ -1,7 +1,272 @@
 ---
-title: "INLS 625 Term Project Home"
+title: "INLS 625 Term Project"
 author: "John Roberson"
-output: html_document
+date: "April 22, 2019"
+output: 
+  html_document:
+    df_print: paged
+    code_folding: hide
+  html_notebook:
+    code_folding: hide
 ---
 
-Home
+As a reminder, I'm investigating Congressional bills from the 112th to 115th Congresses; within that group, I'm looking specifically at bills that *passed* the House in each of those Congresses. The data were sourced from three places: [ProPublica's Congress API](https://projects.propublica.org/api-docs/congress-api/), [govtrack.us](https://www.govtrack.us), and [voteview.com](https://voteview.com/data) (for DW_NOMINATE score). With the data collected and (for the most part) pre-processed in Python (see the script [here](https://github.com/johnbroberson/inls625/blob/master/congspons.py) if you haven't already), I next turned to R to understand and analyze the data. 
+
+# Descriptives
+
+To begin, I've included the pre-processed data in tabular form below. Recoding in R included making dates be recognized as dates, converting between nominal and numeric attributes, and fixing some string cases. 
+
+```{r Data Overview, message=FALSE, warning=FALSE}
+require(tidyverse)
+data <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/Processed with No Text.csv")
+data <- subset(data, select = -c(1,7,9,11,17))
+data$cospons_r[is.na(data$cospons_r)] <- 0
+data$cospons_d[is.na(data$cospons_d)] <- 0
+data$cospons_i[is.na(data$cospons_i)] <- 0
+data$introduced_date <- as.Date(data$introduced_date)
+data$primary_subject <- tolower(data$primary_subject)
+data$primary_subject <- str_to_title(data$primary_subject, locale = "en")
+names(data) <- c("bill_id","bill_slug","bill_type","committees",
+                 "cosponsors","introduced_date","primary_subject",
+                 "sponsor_id","sponsor_name","sponsor_party",
+                 "sponsor_state","sponsor_title",
+                 "congress","dw_nom_1",
+                 "dw_nom_2","sponsor_gender","sponsor_twitter",
+                 "sponsor_leadership_role","sponsor_seniority",
+                 "sponsor_party_loyalty","sponsor_district",
+                 "sponsor_age","cosponsors_r","cosponsors_d",
+                 "cosponsors_i","bill_len","bill_avg_word_len",
+                 "bill_num_stopwords","bill_num_numerics",
+                 "bill_num_usc_refs","result")
+data$sponsor_party <- as.character(data$sponsor_party)
+data$sponsor_party_n[data$sponsor_party == "R"] <- -1
+data$sponsor_party_n[data$sponsor_party == "I"] <- 0
+data$sponsor_party_n[data$sponsor_party == "D"] <- 1
+data$sponsor_gender_n <- as.numeric(data$sponsor_gender)
+data$sponsor_leadership <- !(data$sponsor_leadership_role == "")
+data$result_simplified <- NA
+data$result_simplified[as.character(data$result) %in% c("Became law","Passed; not law (e.g. CR)","Vetoed")] <- "Made it through"
+data$result_simplified[as.character(data$result) %in% c("Went to senate","Other","Didn't leave Congress")] <- "Languished in Congress"
+data
+```
+
+### Uni- or Bi-variate Distributions
+
+Next, I've provided a few visualizations so we can get to know the data. First: what do the bills deal with? Each bill is assigned a primary subject, using [categories established by the Congressional Research Service](https://www.congress.gov/help/field-values/policy-area). Below, you can see that certain categories of bills are far more common than others. Bills in just two categories - those dealing with Congress and with ""Government Operations and Politics" - make up over 30% of Bills that passed the House in the 112th - 115th Congresses. Those categories deal with general government oversight, operations, administration, elections, ethics. 
+
+
+```{r, message=FALSE, warning=FALSE}
+require(questionr)
+subject_data_ordered <- subject_data <- freq(subset(data, select = c(7))$primary_subject)
+subject_data_ordered$subject <- subject_data$subject <- rownames(subject_data)
+subject_data_ordered$subject <- factor(subject_data$subject, levels = subject_data[order(subject_data$n), "subject"])
+ggplot(subject_data_ordered, aes(x = subject, y = n)) +
+  geom_bar(stat = "identity") +
+  coord_flip() +
+  labs(title = "    Frequencies of Bill Primary Subjects",
+       caption = "Categorized into 32 bins used by the Congressional Research Service,\nmore information at https://www.congress.gov/help/field-values/policy-area",
+       y = "", x = "")
+```
+
+Next: who is putting these bills forward? I have collected a variety of characteristics about bill sponsors, which I review below. First, in the figure below, the sponsor ages, seniority ranks, and ideologies are plotted. Seniority measures the number of years a member has served. `dw_nom_1` and `dw_nom_2` measure [member ideology](http://www.vcyang.com/vis_congress/) and are calculated from roll call vote records; the first dimension measures the member's position re: government intervention in the economy and the second dimension measures the member's positions with respect to salient social issues of the day, e.g. slavery in the early-mid 19th Century and LGBTQ rights today. 
+
+As the figure shows, sponsors of bills in the relevant timeframe are polarized on the first (economic) dimension but generally share similar positions on the second (social) dimension. They also tend to be older; while the overall US population with bimodal (~30, ~60), the younger population is underrepresented in this sample. That is to be expected though, as Congress as a whole is older than the US population. 
+
+```{r, message=FALSE, warning=FALSE}
+subset(data, select = c(14,15,19,22)) %>%
+  gather() %>%                             # Convert to key-value pairs
+  ggplot(aes(value)) +                     
+    facet_wrap(~ key, scales = "free") +   
+    geom_density() +
+    theme_bw() +
+    labs(title = "Densities of Selected Characteristics: Bill Sponsors, Continuous Attributes")
+```
+
+Next, I plotted a few discrete characteristics of the data; as the figure below shows, the number of bills that passed the House steadily increased from the 112th through the 115th Congress. These bills were overwhelmingly sponsored by men, and overwhelmingly sponsored by Republicans. The gender disparity is to be expected due to the overall gender disparity in the House, though it might be enhanced in this case by the party disparity, as the Republican House caucus is more overwhelmingly-male than its Democratic counterpart. 
+
+The disparity in sponsorships by party is further explored in the second figure below, which shows that the share of Democratic- to Republican-sponsored bills was roughly equal across the four Congresses at hand. This stark imbalance in sponsorships by party is to be expected; the Republican Party held the majority in the House for each of these four Congresses. This fact makes comparison within/among the four Congresses more sound; if the majority and leadership swapped part-way through, many facets might change as a result. However, this also should be noted as a limit on the generalizability of any findings from this project; they only apply to Republican-held Houses, and really only these specific Congresses, as so much in politics depends on temporal context.
+
+```{r, message=FALSE, warning=FALSE}
+subset(data, select = c(13,16,10)) %>%
+  gather() %>%                             # Convert to key-value pairs
+  ggplot(aes(value)) +  
+    facet_wrap(~ key, scales = "free") +
+    geom_bar() +
+    theme_bw()
+summarise(group_by(data, congress, sponsor_party), bill_count = n()) %>%
+  ggplot(aes(fill = sponsor_party, x = congress, y = bill_count)) +
+    geom_bar(stat = "identity", position = "fill") +
+    scale_fill_manual(name = "Sponsor Party",
+                      values = c("#3487BD","black","#D63E50")) +
+    labs(title = "Bills Sponsored by Congress and Sponsor Party",
+         y = "Proportion of Bills Sponsored\n",
+         x = "Congress") 
+```
+
+Finally, I examined the characteristics of the bill texts themselves, which I calculated through text processing in Python. The distributions of those characteristics are plotted below. The distributions are plotted with logarithmic scales on the x axes, due to the extreme right skew of the distributions. This makes the `bill_avg_word_len` plot slightly unorthodox, but for speed of coding, I used a simple `facet_wrap()` call that uses the same scale type for all plots - a decent compromise, since you can still understand what the `bill_avg_word_len` plot is getting across.
+
+In order, the characteristics plotted below are:
+
+* Average word length in the bill
+* Total bill text length
+* Number of numbers in the bill ("4670" -> 1)
+* Number of English stopwords in the bill 
+* Number of references to the US Code in the bill ("40 USC 5670", "section 15 of title 40 of United States Code")
+
+```{r, message=FALSE, warning=FALSE}
+subset(data, select = c(26:30)) %>%
+  gather() %>%                             # Convert to key-value pairs
+  ggplot(aes(value)) +                     # Plot the values
+    facet_wrap(~ key, scales = "free") +   # In separate panels
+    geom_density()  +                      # as density
+    scale_x_log10() +
+    theme_bw() +
+    labs(title = "Densities of Selected Characteristics: Bill Text")
+```
+
+### Correlations
+
+With an understanding of each variable itself, I next turned to gaining an understanding of the relationships between variables. In the figure below, I have plotted the correlations between each variable-pair in the dataset; the size and color of each circle represents the magnitude and direction of any correlation between the relevant two variables. The deeper the color and the larger the circle, the stronger the relationship; if the circle is blue, the correlation is positive/direct, and if the circle is red, the correlation is negative/inverse.
+
+Several top-line conclusions can be drawn from this figure:
+
+* The `cosponsors*` variables, except `cosponsors_i`, are strongly related to each other - even `cosponsors_d` and `cosponsors_r` are strongly, positively correlated. As the number of cosponsors increases, the number of cosponsors in each party also generally increases. The nonexistent correlation of `cosponsors_i` with any of the other `cosponsors*` variables is likely due to the fact that there are simply barely any independent cosponsors in the dataset at all (total across all bills = 54, out of over 75,000 cosponsorships across all bills).
+* Sponsor age and seniority are positively correlated. This makes sense; older people are more likely to have spent longer in the House.
+* All but one attribute of the bill texts are also strongly, positively correlated; the one outlier is average word length. This makes sense - each of the other variables (`bill_num_stopwords`, `bill_num_usc_refs`, and `bill_num_numerics`) are raw counts, which should increase as the overall bill text increases in length (`bill_len`). Average word length, however, should have little relationship to how long the document is.
+* Sponsor party is strongly, negatively correlated with the economic ideological dimension (`dw_nom_1`). A decrease in `dw_nom_1` is associated with supporting greater government intervention in the economy, i.e. supporting traditionally-Democratic proposals. An increase in `sponsor_party_n` represents moving towards Democratic (Republican = -1, Independent = 0, Democratic = 1). Therefore, this inverse relationship makes sense. 
+* There are several other interesting relationships between partisanship/ideology:
+    + Sponsor party is negatively correlated with sponsor gender; because an "increase" in gender means going from female to male and a "decrease" in party means going from Democrat to Independent to Republican, this negative correlation suggests that being male frequently paired with being Republican, and being female is frequently paired with being Democratic. 
+    + Economic ideology is negatively correlated with sponsor age and seniority. Older, more-senior members are predicted to have *lower* `dw_nom_1` scores, i.e. prefer more government intervention in the economy. This is in contrast to the pattern in the wider US population, where getting older usually predicts having more conservative/libertarian economic positions.
+
+
+```{r Correlations, message=FALSE, warning=FALSE}
+cor.mat <- cor(subset(data, select = c(5,13:15,19,26:30,32:33)))
+cor.mat.rounded <- round(cor.mat, 2)
+require(corrplot)
+corrplot(cor.mat.rounded, type = "lower", number.cex = .7, order = "AOE", tl.cex = 0.8, tl.srt = .01, tl.col = "black", col = colorRampPalette(c("#3487BD","white","#D63E50"))(200))
+```
+
+### Target: Bill Fates
+
+The final attribute in the data that will prove crucial in later analysis is the ultimate fate of each bill - did it [make it through Congress, get signed by the President, and become law?](https://www.youtube.com/watch?v=FFroMQlKiag) Of course, reality is a bit more complex than that, and there are more possible outcomes than either dying in the House or fully becoming law; these are the seven possible outcomes into which I recoded the bills, listed in descending order of frequency:
+
+* **Went to Senate** (*n* = `r freq(data$result)["Went to senate","n"]`): passed the House (as did all bills in this dataset) and went to the Senate, but no further
+* **Became law** (*n* = `r freq(data$result)["Became law","n"]`): the simplest category
+* **Didn't leave Congress** (*n* = `r freq(data$result)["Didn't leave Congress","n"]`): mostly died in some committee
+* **Other** (*n* = `r freq(data$result)["Other","n"]`): truly a grab-bag; e.g. a bill that entered SCOTUS litigation
+* **Passed, but are not law** (*n* = `r freq(data$result)["Passed; not law (e.g. CR)","n"]`): bills that passed Congress but do not becomes *laws*, such as continuing resolutions
+* **Vetoed** (*n* = `r freq(data$result)["Vetoed","n"]`): self-explanatory; a very small category, but qualitatively very distinct and worth keeping separate
+
+In addition to this six-level categorical variable, I coded a dichotmous version `result_simplified`, which combined the six categories listed above into the following two:
+
+* **Made it through**: composed of **Became law**, **Passed, but are not law**, and **Vetoed**
+* **Languished in Congress**: composed of **Went to Senate**, **Didn't leave Congress**, and **Other**
+
+Clearly, there are distinct differences between bills that became law and those that were vetoed, but in this simple dichotmous split, the four bills that were vetoed are *more* like the other bills that *also* made it all the way through Congress than those that didn't make it out at all.
+
+In the figure below, I show the breakdown of bill fates within each of the 32 primary subject categories I reviewed above. 
+
+
+```{r, message=FALSE, warning=FALSE}
+summarise(group_by(data, result, primary_subject), bill_count = n())  %>%
+  ggplot(aes(fill = result, x = primary_subject, y = bill_count)) +
+    geom_bar(stat = "identity", position = "fill") +
+    coord_flip() +
+    scale_fill_brewer(palette = "Spectral", guide = guide_legend(reverse = TRUE), name = "Result") +
+    labs(y = "Percent of Bills within Subject Area",
+         title = "Fates of Bills that Passed the House in the 112th - 115th Congresses",
+         x = "") +
+    theme(plot.title = element_text(hjust = 0.5))
+    
+```
+
+
+```{r, message=FALSE, warning=FALSE}
+#https://machinelearningmastery.com/machine-learning-in-r-step-by-step/
+write.csv(data, "C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/R_Processed_Data.csv")
+#require(caret)
+#complete_data <- data[complete.cases(data),]
+#validation_index <- createDataPartition(complete_data$bill_id, p = 0.85, list = F)
+#validation_data <- complete_data[-validation_index,]
+#training_data <- complete_data[validation_index,]
+#control <- trainControl(method = "cv", number = 10)
+#metric <- "Accuracy"
+#set.seed(7)
+#model_lda <- train(result_simplified~., data = training_data, method = "lda", metric = metric, trControl = control)
+#model_knn <- train(result_simplified~., data = training_data, method = "knn", metric = metric, trControl = control)
+#model_rf <- train(result_simplified~., data = training_data, method = "rf", metric = metric, trControl = control)
+```
+
+# Analytics
+
+With a firm understanding of the data, I could now turn to attempting predictions. For that, I turned to KNIME; I attempted to use both R and Weka at different points, but encountered more obstacles with both of those platforms' machine learning tools than with KNIME's. 
+
+### k-Means Clustering
+
+With the data I have, both supervised and unsupervised learning methods can yield interesting results. First, I undertook unsupervised learning, specifically clustering, as I had seen (as reviewed above) that there were certain groupings in the data that might form nice clusters. For that cluster analysis, I used k-Means clustering in KNIME. In order to prep the data for that algorithm, several steps had to be taken:
+
+* Completely non-informative columns (i.e. those with unique values for each instance) were dropped (but they can be re-joined here).
+* Three string columns were recoded to boolean columns:
+    + `sponsor_party` => `sponsor_democrat`
+    + `sponsor_gender` => `sponsor_female`
+    + `sponsor_leadership_role` => `sponsor_leadership`
+* Almost perfectly collinear columns were dropped (determination based mostly on the correlation matrix above):
+    + `cosponsors_d`, `cosponsors_r`, and `cosponsors_i` were dropped, leaving `cosponsors`
+    + ``bill_num_stopwords` and `bill_num_numerics` were dropped, leaving `bill_len` and `bill_num_usc_refs`
+* Rows with missing values were dropped.
+In KNIME, I specified that I wanted 6 clusters to be identified; I chose this number as it's the number of unique values in my `result` variable, and I thought it might be interesting to see if clusters appear which are similar to/predict the ultimate fate of the bills (I undertake that task more directly with the supervised learning models below.)
+After performing the cluster analysis in KNIME, I ported the data back over to R to make tables and plots. The following table contains the mean value of each cluster on each of the attributes used in the analysis; put together, the table represents the seven centroids of the clusters, in 12-dimensional space. From this table, we can see that there is more difference between the clusters on some attributes than other others. For example, there is a lot of variation between the clusters on `bill_len`, but not much variation between clusters on `congress`.
+```{r, message=FALSE, warning=FALSE}
+km_1_clusters <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/K-Means-Clusters1.csv")
+km_1_clusters
+```
+
+In fact, when some of the most informative attributes from that cluster analysis are plotted below, it becomes clear that `bill_len` is an incredibly strong driver of the clustering.
+
+```{r, message=FALSE, warning=FALSE}
+require(plotly)
+km_1_data <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/K-Means-Output1.csv")
+plot_ly(km_1_data, type = "scatter3d", mode = "markers", x = ~bill_len, y = ~dw_nom_2,
+        z = ~sponsor_seniority, color = ~Cluster, hoverinfo = 'text', text = ~row.ID, colors = "Spectral") %>%
+  layout(title = "k-Means Clustered Bills Passed in the House, 112th - 115th Congresses")
+```
+
+### Random Forest DT Modeling
+
+accuracy by fate
+
+```{r, message=FALSE, warning=FALSE}
+rf_1_data <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/RF_Data1.csv")
+rf_1_data['match'] <- (as.character(rf_1_data$result) == as.character(rf_1_data$result..Out.of.bag.))
+summarise(group_by(rf_1_data, result, match), bill_count = n()) %>%
+  ggplot(aes(fill = match, x = result, y = bill_count)) +
+    geom_bar(stat = "identity", position = "fill") +
+    coord_flip() +
+    scale_fill_manual(guide = guide_legend(reverse = TRUE),
+                      name = "Prediction",
+                      labels = c("Incorrect","Correct"),
+                      values = c("#D63E50","#3487BD")) +
+    labs(y = "Proportion of Bills within Subject Area",
+         title = "Random Forest Performance By Bill Fate,\nBills that Passed the House in the 112th - 115th Congresses",
+         x = "") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+accuracy by subject
+
+```{r, message=FALSE, warning=FALSE}
+summarise(group_by(rf_1_data, primary_subject, match), bill_count = n()) %>%
+  ggplot(aes(fill = match, x = primary_subject, y = bill_count)) +
+    geom_bar(stat = "identity", position = "fill") +
+    coord_flip() +
+    scale_fill_manual(guide = guide_legend(reverse = TRUE),
+                      name = "Prediction",
+                      labels = c("Incorrect","Correct"),
+                      values = c("#D63E50","#3487BD")) +
+    labs(y = "Proportion of Bills within Subject Area",
+         title = "Random Forest Performance By Subject Area,\nBills that Passed the House in the 112th - 115th Congresses",
+         x = "") +
+    theme(plot.title = element_text(hjust = 0.5))
+```
+
+...
