@@ -11,11 +11,11 @@ output:
 
 Term Project, INLS 625 Spring 2019
 
-For this project, I'm investigating Congressional bills from the 112th to 115th Congresses; within that group, I'm looking specifically at bills that *passed* the House in each of those Congresses. The data were sourced from three places: [ProPublica's Congress API](https://projects.propublica.org/api-docs/congress-api/), [govtrack.us](https://www.govtrack.us), and [voteview.com](https://voteview.com/data) (for DW_NOMINATE score). With the data collected and (for the most part) pre-processed in Python (see the script [here](https://github.com/johnbroberson/inls625project/blob/gh-pages/congspons.py) if you haven't already), I next turned to R to understand and analyze the data. 
+For this project, I'm investigating bills from the 112th to 115th Congresses that passed the House. Data for the project were sourced from three places: [ProPublica's Congress API](https://projects.propublica.org/api-docs/congress-api/), [govtrack.us](https://www.govtrack.us), and [voteview.com](https://voteview.com/data) (for DW_NOMINATE score). I collected and (for the most part) pre-processed the data in Python (see the script [here](https://github.com/johnbroberson/inls625project/blob/gh-pages/congspons.py)). I next turned to R to understand and analyze the data. 
 
 # Descriptives
 
-To begin, I've included the pre-processed data in tabular form below. Although I did most recoding in Python before importing the data to R, I did do some additional preprocessing once the data were loaded here, including making dates be recognized as dates, converting between nominal and numeric attributes, and fixing some string cases. 
+To begin, I've included the pre-processed data in tabular form below. Although I did most recoding in Python before importing the data to R, I did do some additional preprocessing once the data were loaded in R, including making dates be recognized as dates, converting between nominal and numeric attributes, and fixing some string cases. 
 
 ```{r Data Overview, message=FALSE, warning=FALSE}
 require(tidyverse)
@@ -53,7 +53,7 @@ data
 
 ### Uni- or Bi-variate Distributions
 
-Next, I've provided a few visualizations so we can get to know the data. First: what do the bills deal with? Each bill is assigned a primary subject, using [categories established by the Congressional Research Service](https://www.congress.gov/help/field-values/policy-area). Below, you can see that certain categories of bills are far more common than others. Bills in just two categories - those dealing with Congress and with ""Government Operations and Politics" - make up over 30% of Bills that passed the House in the 112th - 115th Congresses. Those categories deal with general government oversight, operations, administration, elections, ethics. 
+Next, I've provided a few visualizations so we can get to know the data. First: what do the bills deal with? Each bill was assigned a primary subject, using [categories established by the Congressional Research Service](https://www.congress.gov/help/field-values/policy-area). Below, you can see that certain categories of bills are far more common than others. Bills in just two categories - those dealing with Congress and with ""Government Operations and Politics" - make up over 30% of Bills that passed the House in the 112th - 115th Congresses. Those categories deal with general government oversight, operations, administration, elections, ethics. 
 
 
 ```{r, message=FALSE, warning=FALSE}
@@ -69,7 +69,7 @@ ggplot(subject_data_ordered, aes(x = subject, y = n)) +
        y = "", x = "")
 ```
 
-Next: who is putting these bills forward? I have collected a variety of characteristics about bill sponsors, which I review below. First, in the figure below, the sponsor ages, seniority ranks, and ideologies are plotted. Seniority measures the number of years a member has served. `dw_nom_1` and `dw_nom_2` measure [member ideology](http://www.vcyang.com/vis_congress/) and are calculated from roll call vote records; the first dimension measures the member's position re: government intervention in the economy and the second dimension measures the member's positions with respect to salient social issues of the day, e.g. slavery in the early-mid 19th Century and LGBTQ rights today. 
+Next: who is putting these bills forward? I collected a variety of characteristics about bill sponsors, which I review below. First, in the figure below, the sponsor ages, seniority ranks, and ideologies are plotted. Seniority measures the number of years a member has served. `dw_nom_1` and `dw_nom_2` measure [member ideology](http://www.vcyang.com/vis_congress/) and are calculated from roll call vote records; the first dimension measures the member's position re: government intervention in the economy and the second dimension measures the member's positions with respect to salient social issues of the day, e.g. slavery in the early-mid 19th Century and LGBTQ rights today. 
 
 As the figure shows, sponsors of bills in the relevant timeframe are polarized on the first (economic) dimension but generally share similar positions on the second (social) dimension. They also tend to be older; while the overall US population with bimodal (~30, ~60), the younger population is underrepresented in this sample. That is to be expected though, as Congress as a whole is older than the US population. 
 
@@ -83,7 +83,7 @@ subset(data, select = c(14,15,19,22)) %>%
     labs(title = "Figure 2: Densities of Selected Continuous Attributes")
 ```
 
-Next, I plotted a few discrete characteristics of the data; as the figure below shows, the number of bills that passed the House steadily increased from the 112th through the 115th Congress. These bills were overwhelmingly sponsored by men, and overwhelmingly sponsored by Republicans. The gender disparity is to be expected due to the overall gender disparity in the House, though it might be enhanced in this case by the party disparity, as the Republican House caucus is more overwhelmingly-male than its Democratic counterpart. 
+Next, I plotted a few discrete characteristics of the data; as the figure below shows, the number of bills that passed the House steadily increased from the 112th through the 115th Congress. These bills were overwhelmingly sponsored by men, and overwhelmingly sponsored by Republicans. The gender disparity is to be expected due to the overall gender disparity in the House, and it might be enhanced in this case by the party disparity, as the Republican House caucus is more majority-male than its Democratic counterpart. 
 
 The disparity in sponsorships by party is further explored in the second figure below, which shows that the share of Democratic- to Republican-sponsored bills was roughly equal across the four Congresses at hand. This stark imbalance in sponsorships by party is to be expected; the Republican Party held the majority in the House for each of these four Congresses. This fact makes comparison within/among the four Congresses more sound; if the majority and leadership swapped part-way through, many facets might change as a result. However, this also should be noted as a limit on the generalizability of any findings from this project; they only apply to Republican-held Houses, and really only these specific Congresses, as so much in politics depends on temporal context.
 
@@ -150,7 +150,7 @@ corrplot(cor.mat.rounded, type = "lower", number.cex = .7, order = "AOE", tl.cex
 
 ### Target: Bill Fates
 
-The final attribute in the data that will prove crucial in later analysis is the ultimate fate of each bill - did it [make it through Congress, get signed by the President, and become law?](https://www.youtube.com/watch?v=FFroMQlKiag) Of course, reality is a bit more complex than that, and there are more possible outcomes than either dying in the House or fully becoming law; these are the seven possible outcomes into which I recoded the bills, listed in descending order of frequency:
+The final attribute in the data that will prove crucial in later analysis is the ultimate fate of each bill - did it [make it through Congress, get signed by the President, and become law?](https://www.youtube.com/watch?v=FFroMQlKiag) Of course, reality is a bit more complex than that, and there are more possible outcomes than either dying in the House or fully becoming law; these are the six possible outcomes into which I recoded the bills, listed in descending order of frequency:
 
 * **Went to Senate** (*n* = `r freq(data$result)["Went to senate","n"]`): passed the House (as did all bills in this dataset) and went to the Senate, but no further
 * **Became law** (*n* = `r freq(data$result)["Became law","n"]`): the simplest category
@@ -193,7 +193,7 @@ With a firm understanding of the data, I could now turn to attempting prediction
 
 ### k-Means Clustering
 
-With the data I have, both supervised and unsupervised learning methods can yield interesting results. First, I undertook unsupervised learning, specifically clustering, as I had seen (as reviewed above) that there were certain groupings in the data that might form nice clusters. For that cluster analysis, I used k-Means clustering in KNIME. In order to prep the data for that algorithm, several steps had to be taken:
+With the data I have, both supervised and unsupervised learning methods could yield interesting results. First, I undertook unsupervised learning, specifically clustering, as I had seen (as reviewed above) that there were certain groupings in the data that might form nice clusters. For that cluster analysis, I used k-Means clustering in KNIME. In order to prep the data for that algorithm, several steps had to be taken:
 
 * Completely non-informative columns (i.e. those with unique values for each instance) were dropped (but they can be re-joined here).
 * Three string columns were recoded to boolean columns:
@@ -204,7 +204,9 @@ With the data I have, both supervised and unsupervised learning methods can yiel
     + `cosponsors_d`, `cosponsors_r`, and `cosponsors_i` were dropped, leaving `cosponsors`
     + ``bill_num_stopwords` and `bill_num_numerics` were dropped, leaving `bill_len` and `bill_num_usc_refs`
 * Rows with missing values were dropped.
+
 In KNIME, I specified that I wanted 6 clusters to be identified; I chose this number as it's the number of unique values in my `result` variable, and I thought it might be interesting to see if clusters appear which are similar to/predict the ultimate fate of the bills (I undertake that task more directly with the supervised learning models below.)
+
 After performing the cluster analysis in KNIME, I ported the data back over to R to make tables and plots. The following table contains the mean value of each cluster on each of the attributes used in the analysis; put together, the table represents the seven centroids of the clusters, in 12-dimensional space. From this table, we can see that there is more difference between the clusters on some attributes than other others. For example, there is a lot of variation between the clusters on `bill_len`, but not much variation between clusters on `congress`.
 
 ```{r, message=FALSE, warning=FALSE}
@@ -272,7 +274,7 @@ Nope. Sad!
 
 ### Random Forest DT Modeling
 
-The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayesian modelling, and logistic regression. Hopefully, these will be better at my end-goal.
+The next models I developed for this data were supervised; specifically, random forest decision trees, na&iuml;ve bayesian modelling, and logistic regression. Hopefully, these will be better at achieving my end-goal.
 
 I again built most of these models in KNIME. In contrast to the additional data processing that was necessary before the cluster analysis above, no changes were made to the data between export from R, import into KNIME, and running of the models. For this model set, I asked KNIME to predict the six-level `result` column - the more detailed fates of bills in the data set.
 
@@ -285,13 +287,14 @@ rf_1_data['match'] <- (as.character(rf_1_data$result) == as.character(rf_1_data$
 
 rf_1_data
 
+rf_1_acc_stats <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/RF_AccStats1.csv")
+
 ```
 
-Overall, the models developed by the partitioned-RF model set had an accuracy of 76.8%, i.e. an error rate of 23.2%. Running the 10-fold CV yielded an average error rate of 23.351%, confirming the stability of the RF models. Those models' performance differed by result category; RandomForest was generally better at predicting the **Passed, but not law** and **Went to Senate** and not as good at predicting the **Became law** and **Didn't leave Congress** results. I base that conclusion off of the F-scores for each result category as reported by KNIME and included below. Stats for the **Vetoed** and **Other** categories were not reported. 
+Overall, the models developed by the partitioned-RF model set had an accuracy of `r (100* rf_1_acc_stats[7,"Accuracy"])`%, i.e. an error rate of `r 100-(100* rf_1_acc_stats[7,"Accuracy"])`%. Running the 10-fold CV yielded a similar average error rate of 23.351%, confirming the stability of the RF models. Those models' performance differed by result category; RandomForest was generally better at predicting the **Passed, but not law** and **Went to Senate** and not as good at predicting the **Became law** and **Didn't leave Congress** results. I base that conclusion off of the F-scores for each result category as reported by KNIME and included below. Stats for the **Vetoed** and **Other** categories were not reported. 
 
 ```{r, message=FALSE, warning=FALSE}
 
-rf_1_acc_stats <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/RF_AccStats1.csv")
 rf_1_acc_stats
 
 ```
@@ -336,15 +339,17 @@ summarise(group_by(rf_1_data, primary_subject, match), bill_count = n()) %>%
          title = "Figure 13: RandomForest Performance By Subject Area,\nBills that Passed the House in the 112th - 115th Congresses",
          x = "") +
     theme(plot.title = element_text(hjust = 0.5))
+
+nb_acc_stats_1 <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/NB_AccStats1.csv")
+
 ```
 
 ### Na&iuml;ve Bayesian Modelling (NB)
 
-For this next model type, I again turned to KNIME. Again building the model using an 85/15 random split for training and test data, I applied a Na&iuml;ve Bayes learner with `result` as the target column. This model is remarkably less accurate than the RandomForest model, with just barely over 50% test accuracy (50.8%). Similarly to the RandomForest model set, the NB model performed differently by result value; it was best at predicting the **Went to Senate** result, and markedly worse at predicting all other categories; more detailed accuracy statistics are below. Because of this pretty horrible performance, I won't go any further into the NB model here.
+For this next model type, I again turned to KNIME. Again building the model using an 85/15 random split for training and test data, I applied a Na&iuml;ve Bayes learner with `result` as the target column. This model is remarkably less accurate than the RandomForest model, with test accuracy only around 50% (`r (100* nb_acc_stats_1[7,"Accuracy"])`%. Similarly to the RandomForest model set, the NB model performed differently by result value; it was best at predicting the **Went to Senate** result, and markedly worse at predicting all other categories; more detailed accuracy statistics are below. Because of this pretty horrible performance, I won't go any further into the NB model here.
 
 ```{r, message=FALSE, warning=FALSE}
 
-nb_acc_stats_1 <- read.csv("C:/Users/johnr/OneDrive/Spring 2019/INLS 625/Project/NB_AccStats1.csv")
 nb_acc_stats_1
 
 ```
@@ -375,7 +380,7 @@ In the logit model, I included all of the variables we've seen to be at all pred
 
 In the model that resulted, some variables were highly predictive of the outcome; the table below lists each variable in the regression whose effect was significant to at least the *p* < 0.05 level. I list the variable name and the corresponding Odds Ratio. Two notes: some variable names are poorly formatted - these are the dummy variables created by R when a categorical (factor) variable, such as `primary_subject`, is used in regression. Second, an Odds Ratio is somewhat complicated to interpret (though less complicated than a logit coefficient) - essentially, an Odds Ratio greater than 1 means the predictor is directly correlated with the outcome, and an Odds Ratio less than 1 means the predictor is inversely correlated with the outcome.
 
-Lastly, it's important for interpretation to understand how the outcome is coded; in this case, the outcome is `made_through`, where 1 corresponds to "Made it through" in `result_simplified` and 2 corresponds to "Languished in Congress". Therefore, when Odds Ratios are being interpreted, an increase in the outcome means a increase in likelihood of getting through Congress.
+Lastly, it's important for interpretation to understand how the outcome is coded; in this case, the outcome is `made_through`, where 1 corresponds to "Made it through" in `result_simplified` and 0 corresponds to "Languished in Congress". Therefore, when Odds Ratios are being interpreted, an increase in the outcome means a increase in likelihood of getting through Congress.
 
 ```{r, message=FALSE, warning=FALSE}
 
